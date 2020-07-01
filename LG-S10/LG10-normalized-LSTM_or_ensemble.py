@@ -1,9 +1,3 @@
-
-# coding: utf-8
-
-# In[ ]:
-
-
 from datetime import datetime, timedelta
 import numpy as np # linear algebra
 import pandas as pd # data processing, CSV file I/O (e.g. pd.read_csv)
@@ -26,10 +20,6 @@ from sklearn.metrics import mean_absolute_error
 import gc
 from sklearn.metrics import roc_curve,auc
 
-
-# In[ ]:
-
-
 import glob
 import os
 folder_name = 'luce_stations_10'
@@ -37,28 +27,15 @@ file_type = 'txt'
 seperator =' '
 
 dataframe = pd.concat([pd.read_csv(f, sep=seperator, header=None) for f in glob.glob(folder_name + "/*."+file_type)],ignore_index=True)
-dataframe.columns=['stationID','year','month','day','hour','min','sec','epoch','seq#','AmbientTemp','SurfaceTemp','Radiaiton','RH','Moisture','watermark','rain','windSpeed','WindDirection']
-
-
-# In[ ]:
-
+dataframe.columns=['stationID','year','month','day','hour','min','sec','epoch','seq#','AmbientTemp','SurfaceTemp','Radiaiton','RH','Moisture','watermark','rain',
+                   'windSpeed','WindDirection']
 
 df=dataframe.dropna(axis=1, thresh=243500).iloc[:,9:]
 df = df.dropna()
 df = df.reset_index(drop=True)
 df.head()
 
-
-# In[ ]:
-
-
-del dataframe
-gc.collect()
-
-
-# In[ ]:
-
-
+# Randomly select a chunk of data
 from random import randint
 start=randint(0, len(df)-6000)
 print(start)
@@ -66,18 +43,10 @@ dataset = df.iloc[start:start+6000,]
 
 
 # # Normalize and add 5% noise
-
-# In[ ]:
-
-
 # normalize data
 scaler = MinMaxScaler()
 train_scaled = scaler.fit_transform(dataset.iloc[:3600,].values)
 test_scaled = scaler.transform(dataset.iloc[3600:,].values)
-
-
-# In[ ]:
-
 
 # add 5% noises as anomalies into train and test data in order to evaluate the method
 import math
@@ -90,11 +59,7 @@ i=0
 for row in train_anomalies:
     train_scaled[row,:]=temp_data[i,:]
     i+=1
-
-
-# In[ ]:
-
-
+    
 qty=math.floor(len(test_scaled)*0.05)
 test_anomalies=np.random.choice(test_scaled.shape[0],size = qty,replace=False)
 print(test_anomalies)
@@ -105,12 +70,9 @@ for row in test_anomalies:
     i+=1
 
 
-# In[ ]:
-
-
 # multivariate output data prep
 
-# split a multivariate sequence into samples
+# split a multivariate parallel sequence into samples
 def split_sequences(sequences, n_steps):
     X, y = list(), list()
     for i in range(len(sequences)):
@@ -136,7 +98,7 @@ def fit_model(trainX, trainy,n_features):
     model.fit(trainX, trainy, epochs=500, verbose=0)
     return model
 
-# make an ensemble prediction for multi-class classification
+# make an ensemble prediction
 def ensemble_predictions(members, weights, testX, testy):
     # make predictions
     yhats = [model.predict(testX) for model in members]
@@ -157,45 +119,24 @@ def evaluate_ensemble(members, weights, testX, testy):
     return mean_absolute_error(testy, yhat), yhat
 
 
-# In[ ]:
-
-
-n_steps = 5
-# convert into input/output
+n_steps = 5 #decide the size of sliding window
+# convert into input/output for training set
 X_train, y_train = split_sequences(train_scaled, n_steps)
 print(X_train.shape, y_train.shape)
 print(y_train[1])
 
-
-# In[ ]:
-
-
-n_steps = 5
-# convert into input/output
+# convert into input/output for test set
 X_test, y_test = split_sequences(test_scaled, n_steps)
 print(X_test.shape, y_test.shape)
 print(y_test[1])
 
-
-# In[ ]:
-
-
 n_features = X_train.shape[2]
-n_members = 5
+n_members = 5 #if the n_memebers>1, it is a ensemble model; if the n_memebers=1, it is a vanilla LSTM
 members = [fit_model(X_train, y_train,n_features) for _ in range(n_members)]
 # evaluate each single model on the test set
-
 for i in range(n_members):
     _, test_acc = members[i].evaluate(X_test, y_test, verbose=0)
     print('Model %d: %.3f' % (i+1, test_acc))
-# evaluate averaging ensemble (equal weights)
-weights = [1.0/n_members for _ in range(n_members)]
-score, prediction = evaluate_ensemble(members, weights, X_test, y_test)
-print('Equal Weights Score: %.3f' % score)
-
-
-# In[ ]:
-
 
 # normalize a vector to have unit norm
 def normalize(weights):
@@ -214,10 +155,6 @@ def loss_function(weights, members, testX, testy):
     # calculate error rate
     return evaluate_ensemble(members, normalized, testX, testy)[0]
 
-
-# In[ ]:
-
-
 # define bounds on each weight
 bound_w = [(0.0, 1.0)  for _ in range(n_members)]
 # arguments to the loss function
@@ -232,37 +169,12 @@ score, prediction = evaluate_ensemble(members, weights, X_test, y_test)
 print('Optimized Weights Score: %.3f' % score)
 
 
-# In[ ]:
-
-
-aa=[x for x in range(100)]
-plt.figure(figsize=(8,4))
-plt.plot(aa, y_test[-100:,0], marker='.', label="actual")
-plt.plot(aa, prediction[-100:,0], marker='^', label="prediction")
-# plt.tick_params(left=False, labelleft=True) #remove ticks
-plt.tight_layout()
-sns.despine(top=True)
-plt.subplots_adjust(left=0.07)
-plt.ylabel('AmbientTemp', size=15)
-plt.xlabel('Time step', size=15)
-plt.legend(fontsize=15)
-plt.show();
-
-
 # # Calculate Euclidean distance & Detect anomalies
-
-# In[ ]:
-
 
 temp = [] #temporary list
 for j in range(len(y_test)):
     dis = sum([pow(y_test[j][i] - prediction[j][i], 2) for i in range(n_features)])
     temp.append(round(pow(dis, 0.5),4))
-print(len(temp))
-
-
-# In[ ]:
-
 
 array_dis=np.array(temp)
 thold= np.percentile(array_dis,95)
@@ -272,33 +184,22 @@ for a in array_dis:
         outcome.append(1.0) #1 is normal
     else:
         outcome.append(0.0) #0 is abnormals
-#outcome 
 
-
-# In[ ]:
-
-
+# Create a array to indicate the position of actual anomalies
 b = np.ones((len(test_scaled),1))
 rows=test_anomalies
 b[rows] = 0
 test_scaled_anomolies=np.hstack((test_scaled,b))
 
-
-# In[ ]:
-
-
+# Output detection results to excel
 scaled_test_df = pd.DataFrame({'act_AmbientTemp': y_test[:, 0], 'act_SurfaceTemp': y_test[:, 1],'act_Radiaiton': y_test[:, 2], 
                                'act_RH': y_test[:, 3],'act_windSpeed': y_test[:, 4], 'act_WindDirection': y_test[:, 5],
                                'prd_AmbientTemp': prediction[:, 0], 'prd_SurfaceTemp': prediction[:, 1],'prd_Radiaiton': prediction[:, 2],
                                'prd_RH': prediction[:, 3],'prd_windSpeed': prediction[:, 4], 'prd_WindDirection': prediction[:, 5],
                                'Euclidean distance': array_dis,'act_class':test_scaled_anomolies[5:,-1], 'prd_class':outcome})
-#scaled_test_df
 scaled_test_df.to_excel("scaled_test_df-ensemble(5)-(r5).xlsx")
 
-
-# In[ ]:
-
-
+# ROC curve
 fpr, tpr, thresholds = roc_curve(scaled_test_df['act_class'], scaled_test_df['Euclidean distance'],pos_label=0)
 roc_auc = auc(fpr, tpr)
 
@@ -317,9 +218,6 @@ plt.show()
 
 
 # # Visualize data over time
-
-# In[ ]:
-
 
 aa=[x for x in range(200)]
 plt.figure(figsize=(15,4))
@@ -340,4 +238,3 @@ plt.ylabel('AmbientTemp', size=15)
 plt.xlabel('Time stamp', size=15)
 plt.legend(fontsize=12)
 plt.show();
-
