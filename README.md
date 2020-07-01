@@ -5,7 +5,7 @@ The DAND method combines ideas from Munir et al. (2018) and Choi and Lee (2018).
 
 ![DAND figure](https://user-images.githubusercontent.com/43935090/86256042-22c60200-bbb8-11ea-8ceb-c5c5787913cb.jpg)
 
-Reference
+Reference/
 Munir, M., Siddiqui, S.A., Dengel, A., and Ahmed, S. (2018). DeepAnt: A deep learning approach for unsupervised anomaly detection in time series. IEEE Access, 2018, 7, 1991–2005. Retrieved from https://ieeexplore.ieee.org/stamp/stamp.jsp?arnumber=8581424
 
 Choi J.Y. and Lee B. (2018). Combining LSTM network ensemble via adaptive weighting for improved time series forecasting. Mathematical Problems in Engineering, 2018. Retrieved from https://www.hindawi.com/journals/mpe/2018/2470171/
