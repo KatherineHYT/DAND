@@ -20,3 +20,6 @@ Column definitions:
 17. Wind Direction [°]
 
 Source: EPFL repository
+
+*DAND.py: the code for DAND method\
+*LSTM_or_ensemble.py: the code for vanilla LSTM or ensemble with fixed size of sliding window. The model depends on the parameter "n_members".
