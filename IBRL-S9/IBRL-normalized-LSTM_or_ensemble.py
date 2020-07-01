@@ -85,7 +85,7 @@ def fit_model(trainX, trainy,n_features):
     return model
 
 
-# make an ensemble prediction for multi-class classification
+# make an ensemble prediction
 def ensemble_predictions(members, weights, testX, testy):
     # make predictions
     yhats = [model.predict(testX) for model in members]
