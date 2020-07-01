@@ -12,3 +12,6 @@ Class 4 is dropped as most studies on anomaly detection studies do the same. Cla
 The structure of input data are multiple parallel series.\
 \
 Source from UCI Machine Learning Repository
+
+*DAND.py: the code for DAND method\
+*LSTM_or_ensemble.py: the code for vanilla LSTM or ensemble with fixed size of sliding window. The model depends on the parameter "n_members".
