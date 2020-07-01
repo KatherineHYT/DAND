@@ -99,7 +99,7 @@ def fit_model(trainX, trainy,n_features):
     model.fit(trainX, trainy, epochs=500, verbose=0)
     return model
 
-# make an ensemble prediction for multi-class classification
+# make an ensemble prediction
 def ensemble_predictions(members, weights, testX):
     # make predictions
     temp=[model.predict(testX[i]) for model,i in zip(members,range(n_members))]
