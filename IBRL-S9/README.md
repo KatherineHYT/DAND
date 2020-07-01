@@ -1,4 +1,4 @@
-# Senesor data from Berkeley Research lab
+# Senesor data from Intel Berkeley Research lab
 The four variables represent temperature, humidity, light(Lux), and voltage. 
 The structure of input data are multiple parallel series.
 
